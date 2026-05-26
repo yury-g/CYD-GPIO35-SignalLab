@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SignalLab Web Serial</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b0f;
+      --panel: #141922;
+      --panel-2: #1c2430;
+      --text: #f4f7fb;
+      --muted: #aab6c5;
+      --line: #314052;
+      --cyan: #30d6ff;
+      --green: #36d46b;
+      --yellow: #ffd34d;
+      --red: #ff5f57;
+      --blue: #7da2ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(1180px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 16px 0 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .subtle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 12px;
+    }
+
+    section,
+    aside {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 320px;
+      background: #05070a;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .toolbar,
+    .row,
+    .choices {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar {
+      margin-top: 12px;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      min-height: 62px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+
+    button,
+    input,
+    select {
+      height: 38px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      font: inherit;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 0 12px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    button.primary {
+      background: var(--blue);
+      color: #06101f;
+      border-color: var(--blue);
+    }
+
+    button.good {
+      background: var(--green);
+      color: #031109;
+      border-color: var(--green);
+    }
+
+    button.warn {
+      background: var(--yellow);
+      color: #171000;
+      border-color: var(--yellow);
+    }
+
+    button.danger {
+      background: var(--red);
+      color: #1b0303;
+      border-color: var(--red);
+    }
+
+    button.toggle.active {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: #001017;
+    }
+
+    input,
+    select {
+      padding: 0 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 12px 0;
+    }
+
+    label span {
+      color: var(--muted);
+    }
+
+    .banner {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 12px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .banner.good {
+      border-color: #2f8a51;
+      color: var(--green);
+    }
+
+    .banner.warn {
+      border-color: #8d7628;
+      color: var(--yellow);
+    }
+
+    .banner.bad {
+      border-color: #8d332f;
+      color: var(--red);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      padding: 7px 0;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .log {
+      height: 130px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #07090d;
+      border-radius: 6px;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>SignalLab Web Serial</h1>
+        <div class="subtle">CYD records locally. This page controls labels and pulls the saved file.</div>
+      </div>
+      <button id="connectButton" class="primary">Connect CYD</button>
+    </header>
+
+    <div id="banner" class="banner warn">Not connected. Click Connect CYD and choose the USB serial device.</div>
+
+    <div class="grid">
+      <section>
+        <canvas id="waveform" width="1000" height="320"></canvas>
+
+        <div class="status-strip">
+          <div class="metric">
+            <span class="subtle">Rows received</span>
+            <strong id="sampleCount">0</strong>
+          </div>
+          <div class="metric">
+            <span class="subtle">Elapsed</span>
+            <strong id="elapsed">00:00</strong>
+          </div>
+          <div class="metric">
+            <span class="subtle">Last row</span>
+            <strong id="lastRowAge">never</strong>
+          </div>
+          <div class="metric">
+            <span class="subtle">Raw</span>
+            <strong id="rawValue">-</strong>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button id="startButton" class="good" disabled>Start Recording</button>
+          <button id="pauseButton" class="warn" disabled>Pause</button>
+          <button id="stopButton" class="danger" disabled>Stop</button>
+          <button id="markButton" disabled>Mark</button>
+          <button id="pullButton" disabled>Pull Latest From CYD</button>
+          <button id="saveButton" disabled>Save Again</button>
+        </div>
+      </section>
+
+      <aside>
+        <div class="choices">
+          <button id="fingerButton" class="toggle" disabled>Finger</button>
+          <button id="earButton" class="toggle" disabled>Ear</button>
+          <button id="noneButton" class="toggle active" disabled>No Body Contact</button>
+        </div>
+
+        <div class="toolbar">
+          <button id="connectedButton" class="toggle" disabled>Connected</button>
+          <button id="unpluggedButton" class="toggle active" disabled>Unplugged</button>
+        </div>
+
+        <label>
+          <span>Target duration</span>
+          <select id="targetSeconds">
+            <option value="60">1 minute</option>
+            <option value="120" selected>2 minutes</option>
+            <option value="300">5 minutes</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Notes</span>
+          <input id="notes" placeholder="ear clip, pressure change, chair still...">
+        </label>
+
+        <table>
+          <tbody>
+            <tr><th>Firmware</th><td id="firmware">-</td></tr>
+            <tr><th>Label</th><td id="label">none_unplugged</td></tr>
+            <tr><th>Status</th><td id="signalStatus">-</td></tr>
+            <tr><th>Recording</th><td id="recordingState">stopped</td></tr>
+            <tr><th>CYD saved</th><td id="boardFile">-</td></tr>
+            <tr><th>Range</th><td id="rangeValue">-</td></tr>
+            <tr><th>Rails</th><td id="rails">-</td></tr>
+          </tbody>
+        </table>
+
+        <p class="small">You know the CYD has it when Recording is active and CYD saved rows increases. After STOP, this page pulls the saved file from the CYD and downloads the capture files.</p>
+
+        <div id="log" class="log"></div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const HEADER = ["kind", "ms", "raw", "min", "max", "range", "rail_low", "rail_high", "status", "label", "placement", "connected", "recording", "event", "detail"];
+    const els = {
+      banner: document.querySelector("#banner"),
+      connectButton: document.querySelector("#connectButton"),
+      startButton: document.querySelector("#startButton"),
+      pauseButton: document.querySelector("#pauseButton"),
+      stopButton: document.querySelector("#stopButton"),
+      markButton: document.querySelector("#markButton"),
+      pullButton: document.querySelector("#pullButton"),
+      saveButton: document.querySelector("#saveButton"),
+      fingerButton: document.querySelector("#fingerButton"),
+      earButton: document.querySelector("#earButton"),
+      noneButton: document.querySelector("#noneButton"),
+      connectedButton: document.querySelector("#connectedButton"),
+      unpluggedButton: document.querySelector("#unpluggedButton"),
+      targetSeconds: document.querySelector("#targetSeconds"),
+      notes: document.querySelector("#notes"),
+      sampleCount: document.querySelector("#sampleCount"),
+      elapsed: document.querySelector("#elapsed"),
+      lastRowAge: document.querySelector("#lastRowAge"),
+      rawValue: document.querySelector("#rawValue"),
+      firmware: document.querySelector("#firmware"),
+      label: document.querySelector("#label"),
+      signalStatus: document.querySelector("#signalStatus"),
+      recordingState: document.querySelector("#recordingState"),
+      boardFile: document.querySelector("#boardFile"),
+      rangeValue: document.querySelector("#rangeValue"),
+      rails: document.querySelector("#rails"),
+      log: document.querySelector("#log"),
+      canvas: document.querySelector("#waveform"),
+    };
+
+    const state = {
+      port: null,
+      reader: null,
+      writer: null,
+      connected: false,
+      placement: "none",
+      sensorConnected: false,
+      recording: "stopped",
+      firmware: "-",
+      rows: [],
+      samples: [],
+      events: [],
+      sampleCount: 0,
+      lastRowAt: 0,
+      lastRaw: null,
+      lastStatus: "-",
+      lastRange: "-",
+      lastRailLow: "-",
+      lastRailHigh: "-",
+      captureStartedAt: null,
+      captureStoppedAt: null,
+      lastSavedFiles: null,
+      boardFileSize: 0,
+      boardRows: 0,
+      boardFileState: "-",
+      dumping: false,
+      dumpLines: [],
+    };
+
+    const ctx = els.canvas.getContext("2d");
+
+    function formatTime(seconds) {
+      const safe = Math.max(0, Math.floor(seconds || 0));
+      return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+    }
+
+    function log(message) {
+      const now = new Date().toLocaleTimeString();
+      els.log.textContent += `[${now}] ${message}\n`;
+      els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    function banner(text, kind = "warn") {
+      els.banner.textContent = text;
+      els.banner.className = `banner ${kind}`;
+    }
+
+    function labelText() {
+      return `${state.placement}_${state.sensorConnected ? "connected" : "unplugged"}`;
+    }
+
+    function setEnabled(enabled) {
+      [
+        els.startButton,
+        els.pauseButton,
+        els.stopButton,
+        els.markButton,
+        els.pullButton,
+        els.fingerButton,
+        els.earButton,
+        els.noneButton,
+        els.connectedButton,
+        els.unpluggedButton,
+      ].forEach((button) => {
+        button.disabled = !enabled;
+      });
+    }
+
+    function setActive(button, active) {
+      button.classList.toggle("active", active);
+    }
+
+    function updateUi() {
+      setActive(els.fingerButton, state.placement === "finger");
+      setActive(els.earButton, state.placement === "ear");
+      setActive(els.noneButton, state.placement === "none");
+      setActive(els.connectedButton, state.sensorConnected);
+      setActive(els.unpluggedButton, !state.sensorConnected);
+
+      els.pauseButton.disabled = !state.connected || state.recording !== "recording";
+      els.stopButton.disabled = !state.connected || (state.recording === "stopped" && state.sampleCount === 0);
+      els.startButton.disabled = !state.connected;
+      els.markButton.disabled = !state.connected;
+      els.pullButton.disabled = !state.connected || state.recording !== "stopped";
+      els.saveButton.disabled = !state.lastSavedFiles && state.rows.length === 0;
+
+      els.sampleCount.textContent = String(state.sampleCount);
+      els.rawValue.textContent = state.lastRaw ?? "-";
+      els.firmware.textContent = state.firmware;
+      els.label.textContent = labelText();
+      els.signalStatus.textContent = state.lastStatus;
+      els.recordingState.textContent = state.recording;
+      els.boardFile.textContent = `${state.boardRows} rows / ${state.boardFileSize} bytes / ${state.boardFileState}`;
+      els.rangeValue.textContent = state.lastRange;
+      els.rails.textContent = `${state.lastRailLow}/${state.lastRailHigh}`;
+
+      const elapsedSeconds = state.rows.length ? Number(state.rows[state.rows.length - 1].ms || 0) / 1000 : 0;
+      els.elapsed.textContent = formatTime(elapsedSeconds);
+      if (state.lastRowAt) {
+        const age = (performance.now() - state.lastRowAt) / 1000;
+        els.lastRowAge.textContent = `${age.toFixed(1)}s`;
+      } else {
+        els.lastRowAge.textContent = "never";
+      }
+
+      const target = Number(els.targetSeconds.value);
+      if (!state.connected) {
+        banner("Not connected. Click Connect CYD and choose the USB serial device.", "warn");
+      } else if (state.recording === "recording" && state.lastRowAt && performance.now() - state.lastRowAt < 1200) {
+        if (elapsedSeconds >= target) {
+          banner(`CYD is saving data. Target reached at ${formatTime(elapsedSeconds)}. You can Stop now.`, "good");
+        } else {
+          banner(`CYD is saving data. Keep going until ${formatTime(target)} unless you want a shorter capture.`, "good");
+        }
+      } else if (state.recording === "recording") {
+        banner("Recording command sent, but no recent rows received. Check cable/device selection.", "bad");
+      } else if (state.recording === "paused") {
+        banner("Paused. Waveform may continue on CYD, but this page is not receiving saved sample rows.", "warn");
+      } else if (state.sampleCount > 0) {
+        banner(`Stopped with ${state.sampleCount} rows loaded in browser. Save is ready.`, "good");
+      } else {
+        banner("Connected. Choose placement/contact, then Start Recording.", "warn");
+      }
+
+      draw();
+    }
+
+    function draw() {
+      const width = els.canvas.width;
+      const height = els.canvas.height;
+      ctx.fillStyle = "#05070a";
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = "#243244";
+      ctx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        const y = (height * i) / 4;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      for (let i = 1; i < 10; i++) {
+        const x = (width * i) / 10;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      const visible = state.samples.slice(-1000);
+      if (visible.length < 2) return;
+      ctx.strokeStyle = "#30d6ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      visible.forEach((sample, index) => {
+        const x = (width * index) / Math.max(1, visible.length - 1);
+        const y = height - (Number(sample.raw) / 1023) * height;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    async function send(command) {
+      if (!state.writer) return;
+      await state.writer.write(new TextEncoder().encode(`${command}\n`));
+      log(`> ${command}`);
+    }
+
+    function rowFromLine(line) {
+      const parts = line.split(",");
+      if (parts[0] === "header") return null;
+      if (!["siglab", "event", "marker"].includes(parts[0])) return null;
+      const padded = parts.concat(Array(Math.max(0, HEADER.length - parts.length)).fill(""));
+      return Object.fromEntries(HEADER.map((key, index) => [key, padded[index] ?? ""]));
+    }
+
+    function handleRow(row) {
+      if (!row) return;
+      state.rows.push(row);
+      if (row.placement) state.placement = row.placement;
+      if (row.connected !== "") state.sensorConnected = row.connected === "1";
+      if (row.recording) state.recording = row.recording;
+      if (row.status) state.lastStatus = row.status;
+      if (row.range) state.lastRange = row.range;
+      if (row.rail_low) state.lastRailLow = row.rail_low;
+      if (row.rail_high) state.lastRailHigh = row.rail_high;
+
+      if (row.kind === "siglab") {
+        state.sampleCount += 1;
+        state.lastRowAt = performance.now();
+        state.lastRaw = row.raw;
+        state.samples.push(row);
+      } else if (row.kind === "event") {
+        state.events.push(row);
+        log(`event ${row.event || "-"} ${row.detail || ""}`.trim());
+        if (row.event === "start") {
+          state.captureStartedAt = new Date();
+          state.captureStoppedAt = null;
+        }
+        if (row.event === "stop") {
+          state.captureStoppedAt = new Date();
+          send("DUMP");
+        }
+      }
+      updateUi();
+    }
+
+    function loadDumpLines(lines) {
+      const parsedRows = [];
+      for (const line of lines) {
+        const row = rowFromLine(line.trim());
+        if (row) parsedRows.push(row);
+      }
+      state.rows = parsedRows;
+      state.samples = parsedRows.filter((row) => row.kind === "siglab");
+      state.events = parsedRows.filter((row) => row.kind === "event");
+      state.sampleCount = state.samples.length;
+      if (state.samples.length) {
+        const last = state.samples.at(-1);
+        state.lastRaw = last.raw;
+        state.lastStatus = last.status || state.lastStatus;
+        state.lastRange = last.range || state.lastRange;
+        state.lastRailLow = last.rail_low || state.lastRailLow;
+        state.lastRailHigh = last.rail_high || state.lastRailHigh;
+      }
+      const lastState = [...state.events].reverse().find((row) => row.placement || row.connected !== "" || row.recording);
+      if (lastState) {
+        if (lastState.placement) state.placement = lastState.placement;
+        if (lastState.connected !== "") state.sensorConnected = lastState.connected === "1";
+        if (lastState.recording) state.recording = lastState.recording;
+      }
+      state.lastRowAt = performance.now();
+      log(`loaded ${state.sampleCount} sample rows from CYD`);
+      saveCapture();
+      updateUi();
+    }
+
+    async function readLoop() {
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (state.port && state.port.readable) {
+        state.reader = state.port.readable.getReader();
+        try {
+          while (true) {
+            const { value, done } = await state.reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              const clean = line.trim();
+              if (!clean) continue;
+              if (state.dumping) {
+                if (clean.startsWith("dump_end,")) {
+                  state.dumping = false;
+                  loadDumpLines(state.dumpLines);
+                  state.dumpLines = [];
+                } else {
+                  state.dumpLines.push(clean);
+                }
+              } else if (clean.startsWith("dump_begin,")) {
+                const parts = clean.split(",");
+                state.dumping = true;
+                state.dumpLines = [];
+                state.boardFileSize = Number(parts[2] || 0);
+                state.boardRows = Number(parts[3] || 0);
+                log(`dump begin: ${state.boardRows} rows, ${state.boardFileSize} bytes`);
+                updateUi();
+              } else if (clean.startsWith("version,")) {
+                state.firmware = clean.slice("version,".length);
+                log(clean);
+                updateUi();
+              } else if (clean.startsWith("storage,")) {
+                log(clean);
+              } else if (clean.startsWith("file,")) {
+                const parts = clean.split(",");
+                state.boardFileSize = Number(parts[2] || 0);
+                state.boardRows = Number(parts[3] || 0);
+                state.boardFileState = parts[4] || "-";
+                updateUi();
+              } else {
+                handleRow(rowFromLine(clean));
+              }
+            }
+          }
+        } finally {
+          state.reader.releaseLock();
+        }
+      }
+    }
+
+    async function connect() {
+      if (!("serial" in navigator)) {
+        banner("Web Serial is not available. Use Chrome or Edge on localhost.", "bad");
+        return;
+      }
+      state.port = await navigator.serial.requestPort();
+      await state.port.open({ baudRate: 115200 });
+      state.writer = state.port.writable.getWriter();
+      state.connected = true;
+      setEnabled(true);
+      await send("VERSION");
+      await send("FILE");
+      readLoop().catch((error) => {
+        console.error(error);
+        banner("Serial read stopped. Reconnect the CYD.", "bad");
+      });
+      updateUi();
+    }
+
+    async function choosePlacement(nextPlacement) {
+      state.placement = nextPlacement;
+      updateUi();
+      if (nextPlacement === "finger") await send("FINGER");
+      else if (nextPlacement === "ear") await send("EAR");
+      else await send("NONE");
+    }
+
+    async function chooseConnected(nextConnected) {
+      state.sensorConnected = nextConnected;
+      updateUi();
+      await send(nextConnected ? "CONNECTED" : "UNPLUGGED");
+    }
+
+    async function startRecording() {
+      state.rows = [];
+      state.samples = [];
+      state.events = [];
+      state.sampleCount = 0;
+      state.lastRowAt = 0;
+      state.lastSavedFiles = null;
+      updateUi();
+      await send("START");
+    }
+
+    async function pauseRecording() {
+      await send("PAUSE");
+    }
+
+    async function stopRecording() {
+      await send("STOP");
+    }
+
+    async function pullLatest() {
+      await send("FILE");
+      await send("DUMP");
+    }
+
+    async function mark() {
+      const note = els.notes.value.trim() || "operator mark";
+      await send(`MARK ${note.replaceAll(",", ";")}`);
+    }
+
+    function csvText() {
+      const escape = (value) => {
+        const text = String(value ?? "");
+        return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+      };
+      return [HEADER.join(","), ...state.rows.map((row) => HEADER.map((key) => escape(row[key])).join(","))].join("\n") + "\n";
+    }
+
+    function summary() {
+      const raw = state.samples.map((row) => Number(row.raw)).filter((value) => Number.isFinite(value));
+      const ranges = state.samples.map((row) => Number(row.range)).filter((value) => Number.isFinite(value));
+      const rails = state.samples.filter((row) => row.rail_low === "1" || row.rail_high === "1" || row.status === "CLIPPING").length;
+      const sorted = (values) => values.slice().sort((a, b) => a - b);
+      const percentile = (values, pct) => {
+        if (!values.length) return null;
+        const order = sorted(values);
+        const pos = (order.length - 1) * pct;
+        const lo = Math.floor(pos);
+        const hi = Math.ceil(pos);
+        return lo === hi ? order[lo] : order[lo] + (order[hi] - order[lo]) * (pos - lo);
+      };
+      const statuses = {};
+      for (const row of state.samples) statuses[row.status || ""] = (statuses[row.status || ""] || 0) + 1;
+      return {
+        source: "webserial",
+        samples: state.samples.length,
+        duration_seconds: state.samples.length ? Number(state.samples.at(-1).ms || 0) / 1000 : 0,
+        raw: {
+          min: raw.length ? Math.min(...raw) : null,
+          max: raw.length ? Math.max(...raw) : null,
+          p05: percentile(raw, 0.05),
+          p95: percentile(raw, 0.95),
+        },
+        range: {
+          median: percentile(ranges, 0.5),
+        },
+        clipping_percent: state.samples.length ? (rails / state.samples.length) * 100 : 0,
+        status_counts: statuses,
+        quality_notes: state.samples.length ? ["Visual inspection capture generated in browser."] : ["No siglab rows found."],
+      };
+    }
+
+    function previewSvg() {
+      const width = 1000;
+      const height = 260;
+      const pad = 34;
+      const points = state.samples.map((row, index) => {
+        const x = pad + ((width - 2 * pad) * index) / Math.max(1, state.samples.length - 1);
+        const y = pad + ((height - 2 * pad) * (1023 - Number(row.raw))) / 1023;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      }).join(" ");
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="100%" height="100%" fill="#0b0f14"/>
+  <text x="${pad}" y="22" fill="#f4f7fb" font-family="monospace" font-size="16">${labelText()}</text>
+  <g stroke="#263545" stroke-width="1">
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${height - pad}"/>
+    <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}"/>
+    <line x1="${pad}" y1="${pad + (height - 2 * pad) / 2}" x2="${width - pad}" y2="${pad + (height - 2 * pad) / 2}"/>
+  </g>
+  <polyline fill="none" stroke="#31d4ff" stroke-width="1.5" points="${points}"/>
+</svg>
+`;
+    }
+
+    function download(name, type, text) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function captureBaseName() {
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15).replace("T", "-");
+      return `${stamp}_${labelText()}`;
+    }
+
+    function saveCapture() {
+      if (!state.rows.length) {
+        banner("No rows received yet. Nothing to save.", "bad");
+        return;
+      }
+      const base = captureBaseName();
+      const meta = {
+        started_local: state.captureStartedAt ? state.captureStartedAt.toISOString() : new Date().toISOString(),
+        ended_local: new Date().toISOString(),
+        mode: "webserial-browser",
+        label: labelText(),
+        placement: state.placement,
+        connected: state.sensorConnected,
+        notes: els.notes.value,
+        firmware: state.firmware,
+        format: HEADER,
+      };
+      const files = {
+        [`${base}_raw.csv`]: ["text/csv", csvText()],
+        [`${base}_meta.json`]: ["application/json", JSON.stringify(meta, null, 2) + "\n"],
+        [`${base}_summary.json`]: ["application/json", JSON.stringify(summary(), null, 2) + "\n"],
+        [`${base}_preview.svg`]: ["image/svg+xml", previewSvg()],
+      };
+      for (const [name, [type, text]] of Object.entries(files)) download(name, type, text);
+      state.lastSavedFiles = files;
+      els.saveButton.disabled = false;
+      log(`saved ${Object.keys(files).length} files with base ${base}`);
+    }
+
+    els.connectButton.addEventListener("click", connect);
+    els.fingerButton.addEventListener("click", () => choosePlacement("finger"));
+    els.earButton.addEventListener("click", () => choosePlacement("ear"));
+    els.noneButton.addEventListener("click", () => choosePlacement("none"));
+    els.connectedButton.addEventListener("click", () => chooseConnected(true));
+    els.unpluggedButton.addEventListener("click", () => chooseConnected(false));
+    els.startButton.addEventListener("click", startRecording);
+    els.pauseButton.addEventListener("click", pauseRecording);
+    els.stopButton.addEventListener("click", stopRecording);
+    els.markButton.addEventListener("click", mark);
+    els.pullButton.addEventListener("click", pullLatest);
+    els.saveButton.addEventListener("click", saveCapture);
+    setInterval(updateUi, 300);
+    draw();
+  </script>
+</body>
+</html>

@@ -12,7 +12,7 @@ This repo is for repeatable raw datasets: ear, finger, no contact, nothing conne
 - Samples at 50 Hz.
 - Uses 10-bit ADC values from `0..1023`.
 - First visible firmware version: `SignalLab 0.1.0-gpio35scope`.
-- Current visible firmware version: `SignalLab 0.2.1-touchrec`.
+- Current visible firmware version: `SignalLab 0.3.1-boardstore`.
 - Shows live waveform, raw value, rolling min/max/range, rail indicators, placement/contact controls, recording controls, elapsed recording timer, and simple status.
 - Never shows trusted BPM/IBI and does not use PulseSensor beat auto-detection.
 
@@ -49,6 +49,9 @@ NONE           clear placement
 CONNECTED      mark sensor as plugged/connected
 UNPLUGGED      mark sensor as unplugged/not connected
 VERSION        print the firmware version
+FILE           report latest onboard capture size
+DUMP           stream the latest onboard capture over serial
+ERASE          erase the latest onboard capture
 ```
 
 ## Build And Flash
@@ -75,7 +78,7 @@ pio device monitor --port /dev/cu.usbserial-10 --baud 115200
 Boot confirmation should include:
 
 ```text
-version,SignalLab 0.2.1-touchrec
+version,SignalLab 0.3.1-boardstore
 ```
 
 ## Capture Datasets
@@ -91,6 +94,14 @@ Record a screen-driven capture. Leave this running on the Mac, then use the CYD 
 ```bash
 python3 tools/capture.py --port /dev/cu.usbserial-10
 ```
+
+Or use the barebones browser control page. The CYD saves the latest capture onboard first; the browser pulls that saved file over serial after `STOP`.
+
+```bash
+python3 -m http.server 8765
+```
+
+Then open `http://127.0.0.1:8765/web/signal-lab.html` in Chrome. The page connects with Web Serial, shows whether rows are arriving live, shows how many rows the CYD has saved, draws the waveform, pulls `latest.csv` from the CYD, and downloads `raw.csv`, `meta.json`, `summary.json`, and `preview.svg` when you stop.
 
 CYD buttons:
 

@@ -1,5 +1,7 @@
 #include <Arduino.h>
+#include <FS.h>
 #include <SPI.h>
+#include <SPIFFS.h>
 #include <TFT_eSPI.h>
 #if __has_include(<XPT2046_Touchscreen_TT.h>)
 #include <XPT2046_Touchscreen_TT.h>
@@ -8,7 +10,7 @@
 #endif
 
 #ifndef APP_VERSION
-#define APP_VERSION "SignalLab 0.2.1-touchrec"
+#define APP_VERSION "SignalLab 0.3.1-boardstore"
 #endif
 
 static const uint8_t SIGNAL_PIN = 35;
@@ -37,7 +39,8 @@ static const uint16_t BUTTON_ROW_1_Y = 154;
 static const uint16_t BUTTON_ROW_2_Y = 196;
 static const uint16_t BUTTON_W = 96;
 static const uint16_t BUTTON_H = 34;
-static const uint16_t BUTTON_GAP = 8;
+static const char *CAPTURE_PATH = "/latest.csv";
+static const char *CSV_HEADER = "kind,ms,raw,min,max,range,rail_low,rail_high,status,label,placement,connected,recording,event,detail";
 
 static const uint16_t COLOR_BG = 0x0000;
 static const uint16_t COLOR_GRID = 0x2945;
@@ -113,6 +116,9 @@ int graphX = 0;
 int lastGraphY = GRAPH_TOP + GRAPH_HEIGHT / 2;
 bool graphWrapped = false;
 bool buttonsDirty = true;
+bool storageReady = false;
+File captureFile;
+uint32_t storedRowCount = 0;
 
 const char *currentStatus = "NO SENSOR";
 
@@ -221,6 +227,15 @@ static void drawStaticScreen() {
   buttonsDirty = true;
 }
 
+static void writeCaptureLine(const String &line) {
+  if (!captureFile) return;
+  captureFile.println(line);
+  storedRowCount++;
+  if (storedRowCount % 50 == 0) {
+    captureFile.flush();
+  }
+}
+
 static void recomputeWindowStats() {
   if (sampleCount == 0) {
     windowMin = rawValue;
@@ -322,7 +337,6 @@ static void drawWaveSample(uint16_t value) {
 static void drawMetrics() {
   char line[96];
   unsigned long elapsed = recordElapsedMs() / 1000;
-  uint16_t railTotal = railLowCount + railHighCount;
 
   tft.fillRect(0, FIELD_Y, SCREEN_WIDTH, 28, COLOR_BG);
   tft.setTextDatum(TL_DATUM);
@@ -336,8 +350,8 @@ static void drawMetrics() {
   snprintf(line, sizeof(line), "%s", currentStatus);
   tft.drawString(line, 8, FIELD_Y + 15);
 
-  tft.setTextColor(railTotal ? COLOR_BAD : COLOR_MUTED, COLOR_BG);
-  snprintf(line, sizeof(line), "rail %u/%u", railLowCount, railHighCount);
+  tft.setTextColor(storageReady ? COLOR_MUTED : COLOR_BAD, COLOR_BG);
+  snprintf(line, sizeof(line), "saved %lu", (unsigned long)storedRowCount);
   tft.drawString(line, 112, FIELD_Y + 15);
 
   tft.setTextColor(recordingState == REC_RECORDING ? COLOR_GOOD : (recordingState == REC_PAUSED ? COLOR_WARN : COLOR_MUTED), COLOR_BG);
@@ -346,69 +360,97 @@ static void drawMetrics() {
 }
 
 static void emitStateEvent(const char *eventName, const char *detail) {
-  Serial.print("event,");
-  Serial.print(recordElapsedMs());
-  Serial.print(",,,,,,,");
-  Serial.print(currentStatus);
-  Serial.print(',');
-  Serial.print(labelText());
-  Serial.print(',');
-  Serial.print(placementText());
-  Serial.print(',');
-  Serial.print(sensorConnected ? 1 : 0);
-  Serial.print(',');
-  Serial.print(recordingText());
-  Serial.print(',');
-  Serial.print(eventName);
-  Serial.print(',');
-  Serial.println(detail);
+  String line = "event,";
+  line += String(recordElapsedMs());
+  line += ",,,,,,,";
+  line += currentStatus;
+  line += ",";
+  line += labelText();
+  line += ",";
+  line += placementText();
+  line += ",";
+  line += (sensorConnected ? "1" : "0");
+  line += ",";
+  line += recordingText();
+  line += ",";
+  line += eventName;
+  line += ",";
+  line += detail;
+  Serial.println(line);
+  writeCaptureLine(line);
 }
 
 static void emitCsv(unsigned long sampleElapsedMs) {
-  Serial.print("siglab,");
-  Serial.print(sampleElapsedMs);
-  Serial.print(',');
-  Serial.print(rawValue);
-  Serial.print(',');
-  Serial.print(windowMin);
-  Serial.print(',');
-  Serial.print(windowMax);
-  Serial.print(',');
-  Serial.print(windowRange);
-  Serial.print(',');
-  Serial.print(railLowCount > 0 ? 1 : 0);
-  Serial.print(',');
-  Serial.print(railHighCount > 0 ? 1 : 0);
-  Serial.print(',');
-  Serial.print(currentStatus);
-  Serial.print(',');
-  Serial.print(labelText());
-  Serial.print(',');
-  Serial.print(placementText());
-  Serial.print(',');
-  Serial.print(sensorConnected ? 1 : 0);
-  Serial.print(',');
-  Serial.print(recordingText());
-  Serial.println(",,");
+  String line = "siglab,";
+  line += String(sampleElapsedMs);
+  line += ",";
+  line += String(rawValue);
+  line += ",";
+  line += String(windowMin);
+  line += ",";
+  line += String(windowMax);
+  line += ",";
+  line += String(windowRange);
+  line += ",";
+  line += (railLowCount > 0 ? "1" : "0");
+  line += ",";
+  line += (railHighCount > 0 ? "1" : "0");
+  line += ",";
+  line += currentStatus;
+  line += ",";
+  line += labelText();
+  line += ",";
+  line += placementText();
+  line += ",";
+  line += (sensorConnected ? "1" : "0");
+  line += ",";
+  line += recordingText();
+  line += ",,";
+  Serial.println(line);
+  writeCaptureLine(line);
 }
 
 static void emitMarker(const String &text) {
   String safeText = text;
   safeText.replace(',', ';');
-  Serial.print("marker,");
-  Serial.print(recordElapsedMs());
-  Serial.print(",,,,,,,");
-  Serial.print(currentStatus);
-  Serial.print(',');
-  Serial.print(labelText());
-  Serial.print(',');
-  Serial.print(placementText());
-  Serial.print(',');
-  Serial.print(sensorConnected ? 1 : 0);
-  Serial.print(',');
-  Serial.print(recordingText());
-  Serial.print(",mark,");
-  Serial.println(safeText);
+  String line = "marker,";
+  line += String(recordElapsedMs());
+  line += ",,,,,,,";
+  line += currentStatus;
+  line += ",";
+  line += labelText();
+  line += ",";
+  line += placementText();
+  line += ",";
+  line += (sensorConnected ? "1" : "0");
+  line += ",";
+  line += recordingText();
+  line += ",mark,";
+  line += safeText;
+  Serial.println(line);
+  writeCaptureLine(line);
+}
+
+static void openCaptureFile() {
+  if (!storageReady) return;
+  if (captureFile) captureFile.close();
+  if (SPIFFS.exists(CAPTURE_PATH)) {
+    SPIFFS.remove(CAPTURE_PATH);
+  }
+  captureFile = SPIFFS.open(CAPTURE_PATH, FILE_WRITE);
+  storedRowCount = 0;
+  if (captureFile) {
+    captureFile.println(CSV_HEADER);
+    captureFile.flush();
+  } else {
+    Serial.println("err,storage_open_failed");
+  }
+}
+
+static void closeCaptureFile() {
+  if (!captureFile) return;
+  captureFile.flush();
+  captureFile.close();
 }
 
 static bool hitButton(const Button &button, int16_t x, int16_t y) {
@@ -439,9 +481,11 @@ static void startRecording() {
   }
 
   recordAccumulatedMs = 0;
-  recordStartedAtMs = millis();
   recordingState = REC_RECORDING;
   resetStats();
+  openCaptureFile();
+  recordStartedAtMs = millis();
+  lastSampleMs = recordStartedAtMs;
   buttonsDirty = true;
   emitStateEvent("start", labelText().c_str());
 }
@@ -450,6 +494,7 @@ static void pauseRecording() {
   if (recordingState != REC_RECORDING) return;
   recordAccumulatedMs += millis() - recordStartedAtMs;
   recordingState = REC_PAUSED;
+  if (captureFile) captureFile.flush();
   buttonsDirty = true;
   emitStateEvent("pause", labelText().c_str());
 }
@@ -462,6 +507,62 @@ static void stopRecording() {
   recordingState = REC_STOPPED;
   buttonsDirty = true;
   emitStateEvent("stop", labelText().c_str());
+  closeCaptureFile();
+}
+
+static void dumpLatestCapture() {
+  if (!storageReady) {
+    Serial.println("err,storage_not_ready");
+    return;
+  }
+  if (recordingState == REC_RECORDING || recordingState == REC_PAUSED) {
+    Serial.println("err,dump_requires_stop");
+    return;
+  }
+  if (captureFile) captureFile.flush();
+  File file = SPIFFS.open(CAPTURE_PATH, FILE_READ);
+  if (!file) {
+    Serial.println("err,no_capture_file");
+    return;
+  }
+
+  Serial.print("dump_begin,latest.csv,");
+  Serial.print(file.size());
+  Serial.print(",");
+  Serial.println(storedRowCount);
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+  if (file.size() == 0) Serial.println();
+  Serial.println("dump_end,latest.csv");
+  file.close();
+}
+
+static void printFileInfo() {
+  if (!storageReady) {
+    Serial.println("file,latest.csv,0,0,storage_not_ready");
+    return;
+  }
+  File file = SPIFFS.open(CAPTURE_PATH, FILE_READ);
+  size_t fileSize = file ? file.size() : 0;
+  if (file) file.close();
+  Serial.print("file,latest.csv,");
+  Serial.print(fileSize);
+  Serial.print(",");
+  Serial.print(storedRowCount);
+  Serial.print(",");
+  Serial.println(captureFile ? "open" : "closed");
+}
+
+static void eraseLatestCapture() {
+  if (recordingState == REC_RECORDING || recordingState == REC_PAUSED) {
+    Serial.println("err,erase_requires_stop");
+    return;
+  }
+  closeCaptureFile();
+  if (storageReady) SPIFFS.remove(CAPTURE_PATH);
+  storedRowCount = 0;
+  Serial.println("ack,erase");
 }
 
 static void mapTouchPoint(const TS_Point &point, int16_t *x, int16_t *y) {
@@ -536,6 +637,12 @@ static void handleCommand(String command) {
   } else if (command == "VERSION") {
     Serial.print("version,");
     Serial.println(APP_VERSION);
+  } else if (command == "DUMP") {
+    dumpLatestCapture();
+  } else if (command == "FILE") {
+    printFileInfo();
+  } else if (command == "ERASE") {
+    eraseLatestCapture();
   } else {
     Serial.print("err,unknown_command,");
     Serial.println(command);
@@ -560,6 +667,7 @@ void setup() {
   digitalWrite(BACKLIGHT_PIN, HIGH);
   analogReadResolution(10);
   analogSetPinAttenuation(SIGNAL_PIN, ADC_11db);
+  storageReady = SPIFFS.begin(true);
 
   tft.init();
   tft.setRotation(1);
@@ -574,7 +682,10 @@ void setup() {
 
   Serial.print("version,");
   Serial.println(APP_VERSION);
-  Serial.println("header,kind,ms,raw,min,max,range,rail_low,rail_high,status,label,placement,connected,recording,event,detail");
+  Serial.print("storage,");
+  Serial.println(storageReady ? "ready" : "failed");
+  Serial.print("header,");
+  Serial.println(CSV_HEADER);
   emitStateEvent("boot", labelText().c_str());
 }
 
