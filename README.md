@@ -166,4 +166,6 @@ git push
 
 ## Research Notes
 
+- [Data analysis goal and worklog](docs/data-analysis-goal-and-worklog.md)
+- [Initial capture analysis](docs/initial-capture-analysis.md)
 - [PPG techniques worth testing with SignalLab](docs/ppg-research-notes.md)
