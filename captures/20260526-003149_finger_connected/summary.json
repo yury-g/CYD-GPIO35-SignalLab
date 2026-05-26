@@ -1,0 +1,15 @@
+{
+  "samples": 1440,
+  "duration_seconds": 29.995,
+  "raw_min": 0,
+  "raw_max": 1023,
+  "raw_p05": 133.95,
+  "raw_p95": 993,
+  "range_median": 999,
+  "clipping_percent": 94.44444444444444,
+  "status_counts": {
+    "FLOATING": 80,
+    "CLIPPING": 11,
+    "MOVING": 1349
+  }
+}

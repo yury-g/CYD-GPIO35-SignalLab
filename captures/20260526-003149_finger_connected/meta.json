@@ -1,0 +1,27 @@
+{
+  "started_local": "2026-05-26T00:31:49.712Z",
+  "mode": "browser-contact-sheet",
+  "label": "finger_connected",
+  "placement": "finger",
+  "connected": true,
+  "notes": "",
+  "firmware": "SignalLab 0.4.0-browserops",
+  "rating": "maybe",
+  "format": [
+    "kind",
+    "ms",
+    "raw",
+    "min",
+    "max",
+    "range",
+    "rail_low",
+    "rail_high",
+    "status",
+    "label",
+    "placement",
+    "connected",
+    "recording",
+    "event",
+    "detail"
+  ]
+}

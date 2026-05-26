@@ -1,0 +1,13 @@
+{
+  "samples": 479,
+  "duration_seconds": 9.981,
+  "raw_min": 0,
+  "raw_max": 717,
+  "raw_p05": 0,
+  "raw_p95": 383,
+  "range_median": 717,
+  "clipping_percent": 100,
+  "status_counts": {
+    "NO SENSOR": 479
+  }
+}

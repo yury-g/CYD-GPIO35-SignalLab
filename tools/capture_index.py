@@ -27,6 +27,19 @@ def markdown_table_row(label: str, value: Any) -> str:
     return f"| {label} | {value} |"
 
 
+def summary_value(summary: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        value: Any = summary
+        for part in key.split("."):
+            if not isinstance(value, dict) or part not in value:
+                value = None
+                break
+            value = value[part]
+        if value is not None:
+            return value
+    return None
+
+
 def capture_sections(captures_dir: Path) -> list[str]:
     sections: list[str] = []
     capture_folders = sorted(
@@ -44,10 +57,13 @@ def capture_sections(captures_dir: Path) -> list[str]:
 
         label = meta.get("label") or folder.name
         notes = meta.get("notes") or ""
-        raw = summary.get("raw", {})
-        range_summary = summary.get("range", {})
         quality_notes = summary.get("quality_notes", [])
         status_counts = summary.get("status_counts", {})
+        raw_min = summary_value(summary, "raw.min", "raw_min")
+        raw_max = summary_value(summary, "raw.max", "raw_max")
+        raw_p05 = summary_value(summary, "raw.p05", "raw_p05")
+        raw_p95 = summary_value(summary, "raw.p95", "raw_p95")
+        range_median = summary_value(summary, "range.median", "range_median")
 
         section = [
             f"## {folder.name}",
@@ -61,9 +77,9 @@ def capture_sections(captures_dir: Path) -> list[str]:
             markdown_table_row("Mode", meta.get("mode")),
             markdown_table_row("Samples", summary.get("samples")),
             markdown_table_row("Duration seconds", summary.get("duration_seconds")),
-            markdown_table_row("Raw min/max", f"{raw.get('min', '-')}/{raw.get('max', '-')}"),
-            markdown_table_row("Raw p05/p95", f"{raw.get('p05', '-')}/{raw.get('p95', '-')}"),
-            markdown_table_row("Range median", range_summary.get("median")),
+            markdown_table_row("Raw min/max", f"{raw_min if raw_min is not None else '-'}/{raw_max if raw_max is not None else '-'}"),
+            markdown_table_row("Raw p05/p95", f"{raw_p05 if raw_p05 is not None else '-'}/{raw_p95 if raw_p95 is not None else '-'}"),
+            markdown_table_row("Range median", range_median),
             markdown_table_row("Clipping percent", summary.get("clipping_percent")),
             markdown_table_row("Noise step p95", summary.get("noise_step_p95")),
             markdown_table_row("Peak candidates", summary.get("peak_candidates")),

@@ -1,0 +1,15 @@
+{
+  "samples": 1440,
+  "duration_seconds": 29.996,
+  "raw_min": 300,
+  "raw_max": 701,
+  "raw_p05": 392,
+  "raw_p95": 633.05,
+  "range_median": 362,
+  "clipping_percent": 0,
+  "status_counts": {
+    "FLOATING": 120,
+    "GOOD WAVEFORM": 821,
+    "MOVING": 499
+  }
+}
