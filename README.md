@@ -12,7 +12,7 @@ This repo is for repeatable raw datasets: ear, finger, no contact, nothing conne
 - Samples at 50 Hz.
 - Uses 10-bit ADC values from `0..1023`.
 - First visible firmware version: `SignalLab 0.1.0-gpio35scope`.
-- Current visible firmware version: `SignalLab 0.3.1-boardstore`.
+- Current visible firmware version: `SignalLab 0.4.0-browserops`.
 - Shows live waveform, raw value, rolling min/max/range, rail indicators, placement/contact controls, recording controls, elapsed recording timer, and simple status.
 - Never shows trusted BPM/IBI and does not use PulseSensor beat auto-detection.
 
@@ -41,6 +41,7 @@ Command input:
 MARK <text>    emit a marker row
 RESET          clear rolling stats and elapsed timer
 START          start recording from host
+START <ms>     start recording and auto-stop after milliseconds
 PAUSE          pause recording from host
 STOP           stop recording from host
 FINGER         select finger placement
@@ -49,9 +50,6 @@ NONE           clear placement
 CONNECTED      mark sensor as plugged/connected
 UNPLUGGED      mark sensor as unplugged/not connected
 VERSION        print the firmware version
-FILE           report latest onboard capture size
-DUMP           stream the latest onboard capture over serial
-ERASE          erase the latest onboard capture
 ```
 
 ## Build And Flash
@@ -78,7 +76,7 @@ pio device monitor --port /dev/cu.usbserial-10 --baud 115200
 Boot confirmation should include:
 
 ```text
-version,SignalLab 0.3.1-boardstore
+version,SignalLab 0.4.0-browserops
 ```
 
 ## Capture Datasets
@@ -95,13 +93,13 @@ Record a screen-driven capture. Leave this running on the Mac, then use the CYD 
 python3 tools/capture.py --port /dev/cu.usbserial-10
 ```
 
-Or use the barebones browser control page. The CYD saves the latest capture onboard first; the browser pulls that saved file over serial after `STOP`.
+Or use the barebones browser control page. The CYD acts as a live sensor/scope; the browser controls timed captures and keeps the contact sheet.
 
 ```bash
 python3 -m http.server 8765
 ```
 
-Then open `http://127.0.0.1:8765/web/signal-lab.html` in Chrome. The page connects with Web Serial, shows whether rows are arriving live, shows how many rows the CYD has saved, draws the waveform, pulls `latest.csv` from the CYD, and downloads `raw.csv`, `meta.json`, `summary.json`, and `preview.svg` when you stop.
+Then open `http://127.0.0.1:8765/web/signal-lab.html` in Chrome. The page connects with Web Serial, shows the same live waveform as the CYD, runs standard 10 second or 30 second captures, auto-stops on the timer, and adds each capture to a browser contact sheet for quick best/worst review.
 
 CYD buttons:
 
