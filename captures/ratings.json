@@ -1,0 +1,60 @@
+{
+  "20260526-003149_finger_connected": {
+    "rating": "ignore",
+    "note": "Severe clipping and movement; useful only as a bad-signal example."
+  },
+  "20260526-003311_finger_connected": {
+    "rating": "maybe",
+    "candidate_segment": "0.0-17.7s; strongest 0.5-5.7s",
+    "note": "Early usable segment, but the full capture has heavy clipping and floating behavior."
+  },
+  "20260526-003409_none_connected": {
+    "rating": "control",
+    "note": "No-contact connected false-positive/noise control."
+  },
+  "20260526-003429_none_connected": {
+    "rating": "control",
+    "note": "No-contact connected control with many GOOD WAVEFORM rows despite the control label."
+  },
+  "20260526-003522_none_unplugged": {
+    "rating": "control",
+    "note": "Unplugged/no-sensor control."
+  },
+  "20260526-003538_none_unplugged": {
+    "rating": "control",
+    "note": "Unplugged/no-sensor control."
+  },
+  "20260526-003658_none_connected": {
+    "rating": "control",
+    "note": "No-contact connected control with high-end clipping."
+  },
+  "20260526-003725_none_connected": {
+    "rating": "control",
+    "note": "No-contact connected control with occasional clipping."
+  },
+  "20260526-003830_ear_connected": {
+    "rating": "best",
+    "candidate_segment": "full capture; strongest 0.5-5.7s",
+    "note": "Clean short ear capture with no clipping."
+  },
+  "20260526-003844_ear_connected": {
+    "rating": "maybe",
+    "candidate_segment": "full capture; strongest 3.6-8.8s",
+    "note": "Repeated structure, but mostly MOVING status."
+  },
+  "20260526-004010_ear_connected": {
+    "rating": "best",
+    "candidate_segment": "full capture; strongest 10.9-16.1s",
+    "note": "Strongest long ear capture, about 30 seconds, no clipping."
+  },
+  "20260526-004038_ear_connected": {
+    "rating": "best",
+    "candidate_segment": "full capture; strongest 1.0-6.2s",
+    "note": "Strong short ear capture with no clipping."
+  },
+  "20260526-004055_ear_connected": {
+    "rating": "maybe",
+    "candidate_segment": "0.0-8.8s; avoid late tail",
+    "note": "Useful early/mid segment, but late clipping and a large excursion."
+  }
+}

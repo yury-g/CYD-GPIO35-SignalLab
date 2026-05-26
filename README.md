@@ -131,6 +131,21 @@ Analyze an existing capture:
 python3 tools/analyze.py captures/YYYYMMDD-HHMMSS_slug/raw.csv --json-out captures/YYYYMMDD-HHMMSS_slug/summary.json
 ```
 
+Regenerate batch analysis reports without changing the original browser exports:
+
+```bash
+python3 tools/analyze_batch.py
+python3 tools/capture_index.py
+```
+
+Batch analysis writes:
+
+- `analysis/capture-index.json`
+- `analysis/capture-report.md`
+- `analysis/model-packet.md`
+
+Use `python3 tools/analyze_batch.py --write-capture-summaries` only when you intentionally want to replace each capture folder's exported `summary.json`.
+
 Open the visual gallery at `captures/README.md`. Rebuild it manually if needed:
 
 ```bash
@@ -168,4 +183,6 @@ git push
 
 - [Data analysis goal and worklog](docs/data-analysis-goal-and-worklog.md)
 - [Initial capture analysis](docs/initial-capture-analysis.md)
+- [Generated capture report](analysis/capture-report.md)
+- [Model handoff packet](analysis/model-packet.md)
 - [PPG techniques worth testing with SignalLab](docs/ppg-research-notes.md)
