@@ -1,15 +1,137 @@
 {
+  "source": "captures/20260526-004055_ear_connected/raw.csv",
+  "label": "ear_connected",
+  "is_control": false,
+  "rating_suggestion": "maybe",
   "samples": 480,
-  "duration_seconds": 9.989,
-  "raw_min": 14,
-  "raw_max": 1023,
-  "raw_p05": 355.6,
-  "raw_p95": 730.0999999999999,
-  "range_median": 623,
-  "clipping_percent": 7.916666666666666,
+  "duration_seconds": 9.969,
+  "raw": {
+    "min": 14,
+    "max": 1023,
+    "span": 1009,
+    "mean": 497.646,
+    "median": 465.0,
+    "p05": 355.6,
+    "p95": 730.1
+  },
+  "range": {
+    "median": 623.0,
+    "p05": 308.85,
+    "p95": 955.0
+  },
+  "clipping_percent": 7.917,
+  "step": {
+    "p50": 26.0,
+    "p95": 89.3,
+    "max": 317
+  },
+  "peak_candidates": 14,
   "status_counts": {
+    "CLIPPING": 2,
     "FLOATING": 101,
-    "MOVING": 377,
-    "CLIPPING": 2
-  }
+    "MOVING": 377
+  },
+  "warnings": [
+    "CLIPPING_WARNING",
+    "MOVING_DOMINANT",
+    "LARGE_STEP_CHANGES"
+  ],
+  "candidate_segments": [
+    {
+      "start_ms": 20,
+      "end_ms": 5020,
+      "duration_seconds": 5.0,
+      "samples": 241,
+      "raw_min": 119,
+      "raw_max": 742,
+      "raw_p05": 377.0,
+      "raw_p95": 702.0,
+      "raw_p05_p95_spread": 325.0,
+      "clipping_percent": 0.0,
+      "step_p95": 72.05,
+      "status_counts": {
+        "FLOATING": 101,
+        "MOVING": 140
+      },
+      "peak_candidates": 6,
+      "score": 53.539
+    },
+    {
+      "start_ms": 1020,
+      "end_ms": 6020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 119,
+      "raw_max": 742,
+      "raw_p05": 377.0,
+      "raw_p95": 710.15,
+      "raw_p05_p95_spread": 333.15,
+      "clipping_percent": 0.0,
+      "step_p95": 76.2,
+      "status_counts": {
+        "FLOATING": 52,
+        "MOVING": 188
+      },
+      "peak_candidates": 7,
+      "score": 51.585
+    },
+    {
+      "start_ms": 2020,
+      "end_ms": 7020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 119,
+      "raw_max": 742,
+      "raw_p05": 375.95,
+      "raw_p95": 715.05,
+      "raw_p05_p95_spread": 339.1,
+      "clipping_percent": 0.0,
+      "step_p95": 78.0,
+      "status_counts": {
+        "FLOATING": 4,
+        "MOVING": 236
+      },
+      "peak_candidates": 7,
+      "score": 42.46
+    },
+    {
+      "start_ms": 3020,
+      "end_ms": 8020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 119,
+      "raw_max": 756,
+      "raw_p05": 375.95,
+      "raw_p95": 711.0,
+      "raw_p05_p95_spread": 335.05,
+      "clipping_percent": 0.0,
+      "step_p95": 77.1,
+      "status_counts": {
+        "MOVING": 240
+      },
+      "peak_candidates": 7,
+      "score": 41.665
+    },
+    {
+      "start_ms": 4020,
+      "end_ms": 9020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 316,
+      "raw_max": 772,
+      "raw_p05": 374.95,
+      "raw_p95": 711.2,
+      "raw_p05_p95_spread": 336.25,
+      "clipping_percent": 0.0,
+      "step_p95": 78.3,
+      "status_counts": {
+        "MOVING": 240
+      },
+      "peak_candidates": 7,
+      "score": 41.305
+    }
+  ],
+  "quality_notes": [
+    "Contains low-clipping candidate segments worth later model review."
+  ]
 }

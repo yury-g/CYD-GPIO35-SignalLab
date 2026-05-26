@@ -1,13 +1,39 @@
 {
+  "source": "captures/20260526-003538_none_unplugged/raw.csv",
+  "label": "none_unplugged",
+  "is_control": true,
+  "rating_suggestion": "control",
   "samples": 480,
-  "duration_seconds": 9.99,
-  "raw_min": 0,
-  "raw_max": 84,
-  "raw_p05": 0,
-  "raw_p95": 46.049999999999955,
-  "range_median": 80,
-  "clipping_percent": 100,
+  "duration_seconds": 9.97,
+  "raw": {
+    "min": 0,
+    "max": 84,
+    "span": 84,
+    "mean": 11.294,
+    "median": 0.0,
+    "p05": 0.0,
+    "p95": 46.05
+  },
+  "range": {
+    "median": 80.0,
+    "p05": 67.0,
+    "p95": 84.0
+  },
+  "clipping_percent": 100.0,
+  "step": {
+    "p50": 10.0,
+    "p95": 53.0,
+    "max": 84
+  },
+  "peak_candidates": 27,
   "status_counts": {
     "NO SENSOR": 480
-  }
+  },
+  "warnings": [
+    "SEVERE_CLIPPING"
+  ],
+  "candidate_segments": [],
+  "quality_notes": [
+    "Negative-control capture; do not treat waveform-like structure as PPG evidence."
+  ]
 }

@@ -1,15 +1,141 @@
 {
+  "source": "captures/20260526-003149_finger_connected/raw.csv",
+  "label": "finger_connected",
+  "is_control": false,
+  "rating_suggestion": "ignore",
   "samples": 1440,
-  "duration_seconds": 29.995,
-  "raw_min": 0,
-  "raw_max": 1023,
-  "raw_p05": 133.95,
-  "raw_p95": 993,
-  "range_median": 999,
-  "clipping_percent": 94.44444444444444,
+  "duration_seconds": 29.975,
+  "raw": {
+    "min": 0,
+    "max": 1023,
+    "span": 1023,
+    "mean": 494.046,
+    "median": 388.5,
+    "p05": 133.95,
+    "p95": 993.0
+  },
+  "range": {
+    "median": 999.0,
+    "p05": 926.0,
+    "p95": 1023.0
+  },
+  "clipping_percent": 94.444,
+  "step": {
+    "p50": 36.0,
+    "p95": 242.1,
+    "max": 452
+  },
+  "peak_candidates": 42,
   "status_counts": {
-    "FLOATING": 80,
     "CLIPPING": 11,
+    "FLOATING": 80,
     "MOVING": 1349
-  }
+  },
+  "warnings": [
+    "SEVERE_CLIPPING",
+    "MOVING_DOMINANT",
+    "LARGE_STEP_CHANGES",
+    "FINGER_PLACEMENT_UNSTABLE"
+  ],
+  "candidate_segments": [
+    {
+      "start_ms": 20,
+      "end_ms": 5020,
+      "duration_seconds": 5.0,
+      "samples": 241,
+      "raw_min": 0,
+      "raw_max": 1023,
+      "raw_p05": 132.0,
+      "raw_p95": 993.0,
+      "raw_p05_p95_spread": 861.0,
+      "clipping_percent": 66.805,
+      "step_p95": 243.1,
+      "status_counts": {
+        "CLIPPING": 5,
+        "FLOATING": 80,
+        "MOVING": 156
+      },
+      "peak_candidates": 7,
+      "score": -259.589
+    },
+    {
+      "start_ms": 1020,
+      "end_ms": 6020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 0,
+      "raw_max": 1023,
+      "raw_p05": 134.0,
+      "raw_p95": 992.05,
+      "raw_p05_p95_spread": 858.05,
+      "clipping_percent": 87.083,
+      "step_p95": 250.1,
+      "status_counts": {
+        "CLIPPING": 5,
+        "FLOATING": 31,
+        "MOVING": 204
+      },
+      "peak_candidates": 7,
+      "score": -352.623
+    },
+    {
+      "start_ms": 17020,
+      "end_ms": 22020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 24,
+      "raw_max": 1008,
+      "raw_p05": 144.0,
+      "raw_p95": 991.0,
+      "raw_p05_p95_spread": 847.0,
+      "clipping_percent": 100.0,
+      "step_p95": 217.2,
+      "status_counts": {
+        "MOVING": 240
+      },
+      "peak_candidates": 7,
+      "score": -397.88
+    },
+    {
+      "start_ms": 14020,
+      "end_ms": 19020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 82,
+      "raw_max": 1023,
+      "raw_p05": 144.0,
+      "raw_p95": 993.0,
+      "raw_p05_p95_spread": 849.0,
+      "clipping_percent": 100.0,
+      "step_p95": 219.7,
+      "status_counts": {
+        "CLIPPING": 2,
+        "MOVING": 238
+      },
+      "peak_candidates": 7,
+      "score": -398.505
+    },
+    {
+      "start_ms": 13020,
+      "end_ms": 18020,
+      "duration_seconds": 5.0,
+      "samples": 240,
+      "raw_min": 76,
+      "raw_max": 1023,
+      "raw_p05": 148.95,
+      "raw_p95": 993.1,
+      "raw_p05_p95_spread": 844.15,
+      "clipping_percent": 100.0,
+      "step_p95": 226.1,
+      "status_counts": {
+        "CLIPPING": 3,
+        "MOVING": 237
+      },
+      "peak_candidates": 7,
+      "score": -400.877
+    }
+  ],
+  "quality_notes": [
+    "Frequent rail clipping; use only clearly low-clipping segments if any."
+  ]
 }

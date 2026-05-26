@@ -1,16 +1,42 @@
 {
+  "source": "captures/20260526-003725_none_connected/raw.csv",
+  "label": "none_connected",
+  "is_control": true,
+  "rating_suggestion": "control",
   "samples": 479,
-  "duration_seconds": 9.982,
-  "raw_min": 0,
-  "raw_max": 679,
-  "raw_p05": 445,
-  "raw_p95": 507,
-  "range_median": 182,
-  "clipping_percent": 2.7139874739039667,
+  "duration_seconds": 9.962,
+  "raw": {
+    "min": 0,
+    "max": 679,
+    "span": 679,
+    "mean": 478.589,
+    "median": 484,
+    "p05": 445.0,
+    "p95": 507.0
+  },
+  "range": {
+    "median": 182,
+    "p05": 84.0,
+    "p95": 341.0
+  },
+  "clipping_percent": 2.714,
+  "step": {
+    "p50": 5.0,
+    "p95": 42.0,
+    "max": 217
+  },
+  "peak_candidates": 1,
   "status_counts": {
+    "CLIPPING": 5,
     "FLOATING": 120,
     "GOOD WAVEFORM": 345,
-    "MOVING": 9,
-    "CLIPPING": 5
-  }
+    "MOVING": 9
+  },
+  "warnings": [
+    "CONTROL_FALSE_POSITIVE: 345 GOOD WAVEFORM rows in control capture"
+  ],
+  "candidate_segments": [],
+  "quality_notes": [
+    "Negative-control capture; do not treat waveform-like structure as PPG evidence."
+  ]
 }
