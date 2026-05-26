@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive serial capture tool for CYD GPIO35 SignalLab."""
+"""Serial capture tool for CYD GPIO35 SignalLab."""
 
 from __future__ import annotations
 
@@ -16,10 +16,29 @@ try:
 except ImportError:  # pragma: no cover
     serial = None
 
-from analyze import summarize
+try:
+    from analyze import summarize
+except ImportError:  # pragma: no cover
+    from tools.analyze import summarize
 
 
-HEADER = ["kind", "ms", "raw", "min", "max", "range", "rail_low", "rail_high", "status", "label"]
+HEADER = [
+    "kind",
+    "ms",
+    "raw",
+    "min",
+    "max",
+    "range",
+    "rail_low",
+    "rail_high",
+    "status",
+    "label",
+    "placement",
+    "connected",
+    "recording",
+    "event",
+    "detail",
+]
 
 
 def slugify(text: str) -> str:
@@ -58,17 +77,18 @@ def make_preview_svg(rows: list[dict[str, str]], path: Path, title: str) -> None
     path.write_text(svg)
 
 
-def write_csv_row(writer: csv.writer, parts: list[str]) -> bool:
+def normalize_row(parts: list[str]) -> dict[str, str] | None:
     if not parts:
-        return False
+        return None
+    if parts[0] == "header":
+        return None
     if parts[0] == "siglab" and len(parts) >= 10:
-        writer.writerow(parts[:10])
-        return True
-    if parts[0] == "marker":
-        padded = parts[:10] + [""] * max(0, 10 - len(parts))
-        writer.writerow(padded[:10])
-        return True
-    return False
+        padded = parts[: len(HEADER)] + [""] * max(0, len(HEADER) - len(parts))
+        return dict(zip(HEADER, padded[: len(HEADER)]))
+    if parts[0] in {"event", "marker"}:
+        padded = parts[: len(HEADER)] + [""] * max(0, len(HEADER) - len(parts))
+        return dict(zip(HEADER, padded[: len(HEADER)]))
+    return None
 
 
 def ensure_pyserial() -> None:
@@ -77,35 +97,143 @@ def ensure_pyserial() -> None:
     raise SystemExit("pyserial is required. Install it with: python3 -m pip install pyserial")
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--port", default="/dev/cu.usbserial-10")
-    parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--captures-dir", type=Path, default=Path("captures"))
-    args = parser.parse_args()
+def make_capture_folder(captures_dir: Path, slug: str) -> Path:
+    started = datetime.now()
+    folder = captures_dir / f"{started:%Y%m%d-%H%M%S}_{slugify(slug)}"
+    folder.mkdir(parents=True, exist_ok=False)
+    return folder
 
-    ensure_pyserial()
 
+def write_artifacts(folder: Path, rows: list[dict[str, str]], meta: dict) -> None:
+    raw_csv = folder / "raw.csv"
+    meta_json = folder / "meta.json"
+    summary_json = folder / "summary.json"
+    preview_svg = folder / "preview.svg"
+
+    with raw_csv.open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=HEADER)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    meta_json.write_text(json.dumps(meta, indent=2) + "\n")
+    summary = summarize(raw_csv)
+    summary_json.write_text(json.dumps(summary, indent=2) + "\n")
+    make_preview_svg(rows, preview_svg, f"{meta['label']} {meta['started_local']}")
+
+
+def screen_driven_capture(args: argparse.Namespace) -> Path:
+    started = datetime.now()
+    notes = ask("Session notes", "")
+    folder = make_capture_folder(args.captures_dir, "screen-driven")
+    rows: list[dict[str, str]] = []
+    saw_start = False
+    last_label = "screen-driven"
+
+    print(f"Opening {args.port} at {args.baud} baud...")
+    print("Use the CYD buttons: choose Finger/Ear/Connected, tap START, optionally PAUSE, then STOP.")
+
+    try:
+        with serial.Serial(args.port, args.baud, timeout=1) as ser:
+            time.sleep(1.0)
+            ser.reset_input_buffer()
+            ser.write(b"VERSION\n")
+            while True:
+                line = ser.readline().decode(errors="replace").strip()
+                if not line:
+                    continue
+                if line.startswith("version,"):
+                    print(line)
+                    continue
+                row = normalize_row(line.split(","))
+                if row is None:
+                    continue
+                rows.append(row)
+                if row.get("label"):
+                    last_label = row["label"]
+                if row.get("kind") == "event":
+                    event = row.get("event")
+                    detail = row.get("detail")
+                    print(
+                        f"event={event or '-'} detail={detail or '-'} "
+                        f"label={row.get('label') or '-'} ms={row.get('ms') or '-'}"
+                    )
+                    if event == "start":
+                        saw_start = True
+                    if event == "stop" and saw_start:
+                        break
+                elif row.get("kind") == "siglab" and len(rows) % 250 == 0:
+                    print(f"rows={sum(1 for item in rows if item.get('kind') == 'siglab')} label={last_label}")
+    except KeyboardInterrupt:
+        print("\nInterrupted; writing rows captured so far.")
+
+    meta = {
+        "started_local": started.isoformat(timespec="seconds"),
+        "ended_local": datetime.now().isoformat(timespec="seconds"),
+        "port": args.port,
+        "baud": args.baud,
+        "mode": "screen-driven",
+        "notes": notes,
+        "label": last_label,
+        "format": HEADER,
+        "operator_source": "cyd_touchscreen",
+    }
+    write_artifacts(folder, rows, meta)
+    return folder
+
+
+def timed_capture(args: argparse.Namespace) -> Path:
     placement = ask("Placement", "left ear")
     contact = ask("Contact state", "body contact")
-    duration = int(ask("Duration seconds (60-300)", "120"))
+    duration = int(ask("Duration seconds (60-300)", str(args.duration)))
     if duration < 60 or duration > 300:
         raise SystemExit("Duration must be between 60 and 300 seconds.")
     notes = ask("Notes", "")
 
     started = datetime.now()
     label = slugify(f"{placement} {contact}")
-    folder = args.captures_dir / f"{started:%Y%m%d-%H%M%S}_{label}"
-    folder.mkdir(parents=True, exist_ok=False)
-    raw_csv = folder / "raw.csv"
-    meta_json = folder / "meta.json"
-    summary_json = folder / "summary.json"
-    preview_svg = folder / "preview.svg"
+    folder = make_capture_folder(args.captures_dir, label)
+    rows: list[dict[str, str]] = []
+
+    print(f"Opening {args.port} at {args.baud} baud...")
+    with serial.Serial(args.port, args.baud, timeout=1) as ser:
+        time.sleep(1.0)
+        ser.reset_input_buffer()
+        ser.write(b"RESET\n")
+        if placement.lower().startswith("finger"):
+            ser.write(b"FINGER\n")
+        elif "ear" in placement.lower():
+            ser.write(b"EAR\n")
+        else:
+            ser.write(b"NONE\n")
+        ser.write(b"CONNECTED\n" if "no" not in contact.lower() and "unplug" not in contact.lower() else b"UNPLUGGED\n")
+        ser.write(b"START\n")
+
+        end_at = time.monotonic() + duration
+        next_print = duration
+        while time.monotonic() < end_at:
+            line = ser.readline().decode(errors="replace").strip()
+            row = normalize_row(line.split(","))
+            if row:
+                rows.append(row)
+            remaining = int(end_at - time.monotonic())
+            if remaining <= next_print - 10:
+                print(f"{remaining:3d}s remaining, samples={sum(1 for item in rows if item.get('kind') == 'siglab')}")
+                next_print = remaining
+        ser.write(b"STOP\n")
+        stop_deadline = time.monotonic() + 2
+        while time.monotonic() < stop_deadline:
+            row = normalize_row(ser.readline().decode(errors="replace").strip().split(","))
+            if row:
+                rows.append(row)
+                if row.get("event") == "stop":
+                    break
 
     meta = {
         "started_local": started.isoformat(timespec="seconds"),
+        "ended_local": datetime.now().isoformat(timespec="seconds"),
         "port": args.port,
         "baud": args.baud,
+        "mode": "timed-host-commanded",
         "placement": placement,
         "contact": contact,
         "duration_requested_seconds": duration,
@@ -113,39 +241,28 @@ def main() -> int:
         "label": label,
         "format": HEADER,
     }
-    meta_json.write_text(json.dumps(meta, indent=2) + "\n")
+    write_artifacts(folder, rows, meta)
+    return folder
 
-    rows: list[dict[str, str]] = []
-    print(f"Opening {args.port} at {args.baud} baud...")
-    with serial.Serial(args.port, args.baud, timeout=1) as ser, raw_csv.open("w", newline="") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(HEADER)
-        time.sleep(2.0)
-        ser.reset_input_buffer()
-        ser.write(f"LABEL {label}\n".encode())
-        ser.write(b"RESET\n")
 
-        end_at = time.monotonic() + duration
-        next_print = 0
-        while time.monotonic() < end_at:
-            line = ser.readline().decode(errors="replace").strip()
-            if not line:
-                continue
-            parts = line.split(",")
-            if write_csv_row(writer, parts):
-                row = dict(zip(HEADER, parts[:10] + [""] * max(0, 10 - len(parts))))
-                rows.append(row)
-            remaining = int(end_at - time.monotonic())
-            if remaining <= next_print:
-                print(f"{remaining:3d}s remaining, rows={len(rows)}")
-                next_print = remaining - 10
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--port", default="/dev/cu.usbserial-10")
+    parser.add_argument("--baud", type=int, default=115200)
+    parser.add_argument("--captures-dir", type=Path, default=Path("captures"))
+    parser.add_argument("--mode", choices=["screen", "timed"], default="screen")
+    parser.add_argument("--duration", type=int, default=120)
+    args = parser.parse_args()
 
-    summary = summarize(raw_csv)
-    summary_json.write_text(json.dumps(summary, indent=2) + "\n")
-    make_preview_svg(rows, preview_svg, f"{label} {started:%Y-%m-%d %H:%M:%S}")
+    ensure_pyserial()
+
+    if args.mode == "screen":
+        folder = screen_driven_capture(args)
+    else:
+        folder = timed_capture(args)
 
     print(f"Wrote {folder}")
-    print(f"Commit with: git add {folder} && git commit -m 'Add {label} capture'")
+    print(f"Commit with: git add {folder} && git commit -m 'Add {folder.name} capture'")
     return 0
 
 
