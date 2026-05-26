@@ -393,4 +393,3 @@ python3 tools/capture_index.py
 | Quality notes | Frequent rail clipping; use only clearly low-clipping segments if any. |
 
 [raw.csv](20260526-003149_finger_connected/raw.csv) | [meta.json](20260526-003149_finger_connected/meta.json) | [summary.json](20260526-003149_finger_connected/summary.json)
-

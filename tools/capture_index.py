@@ -200,7 +200,7 @@ def build_readme(captures_dir: Path) -> str:
             ]
         )
 
-    return "\n".join(body) + "\n"
+    return "\n".join(body).rstrip() + "\n"
 
 
 def write_readme(captures_dir: Path) -> Path:
