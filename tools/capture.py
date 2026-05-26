@@ -21,6 +21,11 @@ try:
 except ImportError:  # pragma: no cover
     from tools.analyze import summarize
 
+try:
+    from capture_index import write_readme
+except ImportError:  # pragma: no cover
+    from tools.capture_index import write_readme
+
 
 HEADER = [
     "kind",
@@ -119,6 +124,7 @@ def write_artifacts(folder: Path, rows: list[dict[str, str]], meta: dict) -> Non
     summary = summarize(raw_csv)
     summary_json.write_text(json.dumps(summary, indent=2) + "\n")
     make_preview_svg(rows, preview_svg, f"{meta['label']} {meta['started_local']}")
+    write_readme(folder.parent)
 
 
 def screen_driven_capture(args: argparse.Namespace) -> Path:

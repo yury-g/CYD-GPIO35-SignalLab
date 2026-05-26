@@ -114,11 +114,18 @@ Each capture writes:
 - `captures/YYYYMMDD-HHMMSS_slug/meta.json`
 - `captures/YYYYMMDD-HHMMSS_slug/summary.json`
 - `captures/YYYYMMDD-HHMMSS_slug/preview.svg`
+- `captures/README.md` visual gallery with one graph per capture
 
 Analyze an existing capture:
 
 ```bash
 python3 tools/analyze.py captures/YYYYMMDD-HHMMSS_slug/raw.csv --json-out captures/YYYYMMDD-HHMMSS_slug/summary.json
+```
+
+Open the visual gallery at `captures/README.md`. Rebuild it manually if needed:
+
+```bash
+python3 tools/capture_index.py
 ```
 
 ## Initial Test Matrix
