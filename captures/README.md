@@ -9,7 +9,28 @@ Regenerate after adding or editing captures:
 python3 tools/capture_index.py
 ```
 
-No capture folders are present yet.
+## Recorded So Far
+
+**0 captures.**
+
+There is no waveform to inspect yet. After a capture, each folder will appear below with its raw waveform graph.
+
+## Recording Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Previewing: script open / waveform live
+    Previewing --> Recording: tap START
+    Recording --> Paused: tap PAUSE
+    Paused --> Recording: tap START
+    Recording --> Saved: tap STOP
+    Paused --> Saved: tap STOP
+```
+
+- **Previewing**: CYD waveform is live, but no sample rows are being saved.
+- **Recording**: sample rows are being saved into `raw.csv`.
+- **Paused**: waveform is live, but sample rows are not being saved.
+- **STOP**: ends the capture, writes files, and refreshes this gallery.
 
 Run a screen-driven capture from the repo root:
 
