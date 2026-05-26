@@ -122,3 +122,7 @@ git add captures
 git commit -m "Add initial GPIO35 signal captures"
 git push
 ```
+
+## Research Notes
+
+- [PPG techniques worth testing with SignalLab](docs/ppg-research-notes.md)
